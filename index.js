@@ -15,9 +15,11 @@ const bufLine         = new Buffer( line, encoding );
 const bufEnd          = new Buffer( end, encoding );
 const bufMessageEnder = new Buffer( messageEnder, encoding );
 
-let remainingBuffers = '';
+function TestProtocol () {
+	this.remainingBuffers = '';
+}
 
-function write () {
+TestProtocol.prototype.write = function () {
 
 	var args = arguments;
 
@@ -51,18 +53,18 @@ function write () {
 
 	return Buffer.concat( parts, size );
 
-}
+};
 
-function getCommand( data ) {
+TestProtocol.prototype.getCommand = function ( data ) {
 	let command = [];
 	for( let i = 1; i < data.length; ) {
 		command.push( data[ i ] );
 		i = i + 2;
 	}
 	return command;
-}
+};
 
-function read ( bufferData ) {
+TestProtocol.prototype.read = function ( bufferData ) {
 
 	let read          = [];
 	let readable      = bufferData.toString( 'utf-8' );
@@ -77,21 +79,21 @@ function read ( bufferData ) {
 			if( readableCommand[ readableCommand.length - 1 ] === messageEnder ) {
 
 				// Check if there are buffers
-				if( remainingBuffers ) {
-					readableCommand = remainingBuffers + readableCommand;
+				if( this.remainingBuffers ) {
+					readableCommand = this.remainingBuffers + readableCommand;
 				}
 
 				let readCommandArray = readableCommand.split( end );
 				// Remove message ender
 				readCommandArray.pop();
 				let length = readCommandArray.shift();
-				let command = getCommand( readCommandArray );
+				let command = this.getCommand( readCommandArray );
 				read.push( command );
 
-				// Clear remainingBuffers
-				readableCommand = '';
+				// Clear this.remainingBuffers
+				this.remainingBuffers = '';
 			} else  {
-				remainingBuffers += readableCommand;
+				this.remainingBuffers += readableCommand;
 			}
 
 		}
@@ -100,9 +102,6 @@ function read ( bufferData ) {
 
 	return read;
 
-}
-
-module.exports = {
-	'write' : write,
-	'read'  : read
 };
+
+module.exports = TestProtocol;
